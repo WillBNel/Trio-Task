@@ -1,0 +1,33 @@
+#!/bin/bash
+
+# Delete running containers
+docker rm -f $(docker ps -qa)
+
+# Create network
+docker network create trio-network
+
+# Build Flask app image
+docker build -t trio-task-flask:latest flask-app
+docker build -t trio-task-db:latest db
+
+# Run mysql container
+docker run -d \
+    --network trio-network \
+    --name mysql \
+    trio-task-db:latest
+
+# Run flask app container in the network
+docker run -d \
+    --network trio-network \
+    --name flask-app \
+    trio-task-flask:latest
+
+# Run nginx container in the network
+docker run -d \
+    --network trio-network \
+    --name nginx \
+    --mount type=bind,source=$(pwd)/nginx/nginx.conf,target=/etc/nginx/nginx.conf \
+    -p 80:80 \
+    nginx:alpine
+
+ 
